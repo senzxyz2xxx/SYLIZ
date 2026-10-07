@@ -4,22 +4,19 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>SYLIZ Studio</title>
+<meta name="description" content="SYLIZ Studio — a small crew building fast-paced Roblox worlds.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700;800;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <link rel="icon" type="image/png" href="L1.png">
 <script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
   tailwind.config = {
     theme: {
       extend: {
         colors: {
-          bg: '#17111B',
-          bg2: '#1E1620',
-          pink: '#F2A8C7',
-          lav: '#B79CC9',
-          mint: '#8BC7B5',
-          ink: '#F5EDF2',
-          muted: '#C9BAC7',
+          bg: '#17111B', bg2: '#1E1620', pink: '#F2A8C7', lav: '#B79CC9',
+          mint: '#8BC7B5', ink: '#F5EDF2', muted: '#C9BAC7',
         },
         fontFamily: {
           mono: ["'Space Mono'", 'monospace'],
@@ -31,203 +28,887 @@
 </script>
 <style>
   html { scroll-behavior: smooth; overflow-x: clip; }
-  body { overflow-x: clip; }
+  body { overflow-x: clip; background: #17111B; }
   ::-webkit-scrollbar { width: 8px; }
   ::-webkit-scrollbar-thumb { background: #3A2A3B; border-radius: 4px; }
+  ::selection { background: rgba(242,168,199,.35); }
+
+  body::after {
+    content: ''; position: fixed; inset: 0; pointer-events: none; opacity: .05; z-index: 100;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  .grid-bg {
+    background-image:
+      linear-gradient(rgba(242,168,199,.07) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(242,168,199,.07) 1px, transparent 1px);
+    background-size: 56px 56px;
+    -webkit-mask-image: radial-gradient(ellipse 70% 70% at 50% 40%, #000 30%, transparent 78%);
+            mask-image: radial-gradient(ellipse 70% 70% at 50% 40%, #000 30%, transparent 78%);
+  }
+  .grad-text {
+    background: linear-gradient(100deg, #F5EDF2 15%, #F2A8C7 55%, #B79CC9 95%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  @keyframes floaty { 0%,100% { transform: translateY(-50%) translateY(0) rotate(0deg) } 50% { transform: translateY(-50%) translateY(-18px) rotate(2deg) } }
+  @keyframes drift  { 0%,100% { transform: translate(0,0) } 50% { transform: translate(30px,-20px) } }
+  @keyframes up     { from { opacity: 0; transform: translateY(18px) } to { opacity: 1; transform: none } }
+  @keyframes marq   { to { transform: translateX(-50%) } }
+  @keyframes pulseDot { 0%,100% { box-shadow: 0 0 0 0 rgba(242,168,199,.6) } 50% { box-shadow: 0 0 0 6px rgba(242,168,199,0) } }
+  .floaty { animation: floaty 7s ease-in-out infinite; }
+  .drift  { animation: drift 12s ease-in-out infinite; }
+  .rise   { animation: up .7s both; }
+  .marquee-track { animation: marq 32s linear infinite; width: max-content; }
+  .pulse-dot { animation: pulseDot 2s infinite; }
+  .reveal { opacity: 0; transform: translateY(24px); transition: opacity .7s, transform .7s; }
+  .reveal.in { opacity: 1; transform: none; }
+
+  /* nav */
+  .nav-link { position: relative; color: #C9BAC7; padding: .3rem 0; transition: color .15s; text-decoration: none; }
+  .nav-link:hover { color: #F2A8C7; }
+  .nav-link::after { content: ''; position: absolute; left: 0; right: 0; bottom: -2px; height: 2px; border-radius: 2px; background: #F2A8C7; transform: scaleX(0); transform-origin: left; transition: transform .25s; }
+  .nav-link.active { color: #F5EDF2; }
+  .nav-link.active::after { transform: scaleX(1); }
+  #mobileMenu .nav-link { padding: .8rem 0; border-bottom: 1px solid rgba(255,255,255,.06); }
+  #mobileMenu .nav-link::after { display: none; }
+  #mobileMenu .nav-link.active { color: #F2A8C7; }
+
+  /* member cards */
+  .mcard {
+    --c: #F2A8C7; position: relative; display: flex; flex-direction: column; align-items: center; gap: .5rem; text-align: center;
+    border: 1px solid color-mix(in srgb, var(--c) 65%, transparent);
+    background: linear-gradient(180deg, rgba(255,255,255,.04), transparent 60%), #1E1620;
+    border-radius: 1rem; padding: 1.5rem 1.25rem; text-decoration: none; color: inherit;
+    transition: transform .25s, box-shadow .25s;
+    animation: up .55s both; animation-delay: calc(var(--i, 0) * 80ms);
+  }
+  .mcard:hover { transform: translateY(-5px); box-shadow: 0 14px 44px -14px color-mix(in srgb, var(--c) 60%, transparent); }
+  .mcard .ring { border: 2px solid var(--c); }
+  .mcard.big { box-shadow: 0 0 40px color-mix(in srgb, var(--c) 14%, transparent); }
+
+  /* game cards */
+  .gcard { --c: #F2A8C7; border: 1px solid color-mix(in srgb, var(--c) 40%, transparent); transition: border-color .25s, box-shadow .25s; animation: up .55s both; animation-delay: calc(var(--i, 0) * 80ms); box-shadow: 0 20px 60px -34px color-mix(in srgb, var(--c) 45%, transparent); }
+  .gcard:hover { border-color: color-mix(in srgb, var(--c) 80%, transparent); }
+
+  .ibtn {
+    display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 8px;
+    color: #C9BAC7; border: 1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.03); cursor: pointer; transition: .15s; flex-shrink: 0;
+  }
+  .ibtn:hover { color: #17111B; background: #F2A8C7; border-color: #F2A8C7; }
+  .ibtn.danger:hover { background: #F28B8B; border-color: #F28B8B; }
+
+  .btn { font: inherit; font-size: 11px; letter-spacing: 1.5px; font-weight: 700; padding: .6rem 1.1rem; border-radius: 999px; cursor: pointer; transition: .15s; border: 1px solid transparent; }
+  .btn-p { background: #F2A8C7; color: #17111B; }
+  .btn-p:hover { filter: brightness(1.08); }
+  .btn-p:disabled { opacity: .6; cursor: wait; }
+  .btn-g { background: transparent; color: #C9BAC7; border-color: rgba(255,255,255,.18); }
+  .btn-g:hover { color: #F5EDF2; border-color: #F2A8C7; }
+  .btn-d { background: transparent; color: #F28B8B; border-color: rgba(242,139,139,.5); }
+  .btn-d:hover { background: #F28B8B; color: #17111B; }
+  .fld {
+    width: 100%; background: #17111B; border: 1px solid rgba(242,168,199,.25); border-radius: .6rem;
+    padding: .6rem .75rem; color: #F5EDF2; font: inherit; font-size: 13px; outline: none; transition: border-color .15s;
+  }
+  .fld:focus { border-color: #F2A8C7; }
+  textarea.fld { resize: vertical; line-height: 1.6; }
+  .lbl { display: block; font-size: 10px; letter-spacing: 1.5px; color: #B79CC9; margin-bottom: .35rem; }
+  .hint { font-size: 11px; color: #8d7d8c; margin-top: .3rem; line-height: 1.5; }
+  .chip {
+    display: inline-flex; align-items: center; gap: .5rem; font: inherit; font-size: 12px; color: #F5EDF2; cursor: pointer;
+    padding: .3rem .7rem .3rem .3rem; border-radius: 999px; border: 1px solid rgba(242,168,199,.35); background: rgba(242,168,199,.08);
+  }
+  .tag { font-size: 9px; letter-spacing: 1.5px; font-weight: 700; padding: 2px 7px; border-radius: 999px; background: #F2A8C7; color: #17111B; }
+  .tag.viewer { background: transparent; border: 1px solid #B79CC9; color: #B79CC9; }
+  .btn-login {
+    display: inline-flex; align-items: center; gap: .5rem; font: inherit; font-size: 11px; letter-spacing: 1.5px; font-weight: 700;
+    padding: .5rem .9rem; border-radius: 999px; cursor: pointer; color: #F5EDF2;
+    border: 1px solid rgba(183,156,201,.6); background: rgba(183,156,201,.12); transition: .15s;
+  }
+  .btn-login:hover { background: rgba(183,156,201,.28); border-color: #B79CC9; }
+  .modal { width: 100%; max-width: 460px; max-height: 90vh; overflow: auto; background: #1E1620; border: 1px solid rgba(242,168,199,.4); border-radius: 1.1rem; box-shadow: 0 30px 80px -20px #000; animation: up .3s both; }
+  .sw { width: 26px; height: 26px; border-radius: 999px; border: 2px solid transparent; cursor: pointer; }
+  .sw.on { border-color: #fff; box-shadow: 0 0 0 2px #17111B inset; }
+  /* role icon tile (neon glass) */
+  .ric {
+    --c: #8BC7B5; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; border-radius: 9px; color: var(--c);
+    border: 1px solid color-mix(in srgb, var(--c) 60%, transparent);
+    background: linear-gradient(145deg, color-mix(in srgb, var(--c) 24%, #17111B), color-mix(in srgb, var(--c) 6%, #17111B));
+    box-shadow: 0 0 16px -3px color-mix(in srgb, var(--c) 55%, transparent), inset 0 0 9px color-mix(in srgb, var(--c) 20%, transparent);
+  }
+  .icbtn { width: 38px; height: 38px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; color: var(--c); background: #17111B; border: 1px solid rgba(255,255,255,.12); transition: .15s; }
+  .icbtn:hover { border-color: color-mix(in srgb, var(--c) 70%, transparent); }
+  .icbtn.on { border-color: var(--c); background: color-mix(in srgb, var(--c) 18%, #17111B); box-shadow: 0 0 14px -3px var(--c); }
+  .stbtn { flex: 1; font: inherit; font-size: 10px; letter-spacing: 1px; font-weight: 700; padding: .55rem .4rem; border-radius: .6rem; cursor: pointer; background: #17111B; color: #C9BAC7; border: 1px solid rgba(255,255,255,.15); transition: .15s; }
+  .stbtn.on { color: #17111B; }
 </style>
 </head>
-<body class="bg-bg text-ink font-mono m-0">
+<body class="text-ink font-mono m-0">
 
-<!-- NAV -->
-<nav class="sticky top-0 z-10 flex items-center justify-between h-16 px-6 md:px-14 bg-bg/90 backdrop-blur-sm border-b border-pink/35">
-  <div class="flex items-center gap-2.5">
-    <div class="relative w-8 h-8 flex items-center justify-center font-disp font-extrabold text-[15px] text-pink">
-      S
-      <img src="L1.png" alt="SYLIZ Studio logo" class="absolute inset-0 w-full h-full object-contain" onerror="this.remove()">
+<!-- NAV (sticky) -->
+<nav class="sticky top-0 z-30 h-16 bg-bg/85 backdrop-blur-md border-b border-pink/35">
+  <div class="flex items-center justify-between h-full px-4 md:px-14">
+    <a href="#top" class="flex items-center gap-2.5" style="text-decoration:none;color:inherit">
+      <div class="relative w-8 h-8 flex items-center justify-center font-disp font-extrabold text-[15px] text-pink">
+        S
+        <img src="L1.png" alt="SYLIZ Studio logo" class="absolute inset-0 w-full h-full object-contain" onerror="this.remove()">
+      </div>
+      <span class="text-[13px] tracking-[2px] font-bold">SYLIZ STUDIO</span>
+    </a>
+    <div class="flex items-center gap-3 md:gap-9">
+      <div id="navLinks" class="hidden sm:flex gap-6 md:gap-9 text-xs tracking-[2px]"></div>
+      <div id="authArea" class="flex items-center gap-2"></div>
+      <button type="button" id="burger" data-act="menu" class="ibtn sm:hidden" style="width:34px;height:34px" aria-label="Menu">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </button>
     </div>
-    <span class="text-[13px] tracking-[2px] font-bold">SYLIZ STUDIO</span>
   </div>
-  <div class="flex gap-9 text-xs tracking-[2px] text-muted">
-    <a href="#top" class="text-ink hover:text-pink">HOME</a>
-    <a href="#games" class="hover:text-pink">GAMES</a>
-    <a href="#team" class="hover:text-pink">TEAM</a>
-  </div>
+  <div id="prog" class="absolute left-0 -bottom-px h-[2px] w-full origin-left bg-gradient-to-r from-pink to-lav" style="transform:scaleX(0)"></div>
+  <div id="mobileMenu" class="hidden absolute top-full left-0 right-0 flex-col bg-bg/95 backdrop-blur-md border-b border-pink/35 px-6 py-2 text-xs tracking-[2px]"></div>
 </nav>
 
 <div id="top"></div>
 
 <!-- HERO -->
-<section class="relative px-6 md:px-14 py-20 overflow-hidden">
+<section class="relative px-6 md:px-14 pt-20 pb-24 md:pt-28 md:pb-32 overflow-hidden min-h-[86vh] flex items-center">
   <img src="hero-bg.jpg" alt="" class="absolute inset-0 w-full h-full object-cover" onerror="this.remove()">
   <div class="absolute inset-0 bg-bg/75"></div>
-  <div class="absolute -top-32 -left-24 w-[520px] h-[520px] rounded-full pointer-events-none"
-       style="background:radial-gradient(circle,rgba(242,168,199,0.16),transparent 70%)"></div>
-  <img src="L1.png" alt="" class="hidden md:block absolute top-1/2 right-[12%] -translate-y-1/2 w-[600px] h-[600px] object-contain opacity-10 pointer-events-none" onerror="this.remove()">
+  <div class="absolute inset-0 grid-bg"></div>
+  <div class="drift absolute -top-32 -left-24 w-[520px] h-[520px] rounded-full pointer-events-none"
+       style="background:radial-gradient(circle,rgba(242,168,199,0.20),transparent 70%)"></div>
+  <div class="drift absolute -bottom-40 right-0 w-[520px] h-[520px] rounded-full pointer-events-none" style="animation-delay:-5s;background:radial-gradient(circle,rgba(139,199,181,0.12),transparent 70%)"></div>
+  <img src="L1.png" alt="" class="floaty absolute top-1/2 -right-16 w-[340px] h-[340px] md:right-[8%] md:w-[560px] md:h-[560px] object-contain opacity-[.12] md:opacity-[.14] pointer-events-none" onerror="this.remove()">
 
-  <div class="relative">
-    <span class="inline-block text-xs tracking-[4px] text-pink border border-pink/40 rounded-full px-3.5 py-1.5">
-      ROBLOX GAME STUDIO
+  <div class="relative w-full">
+    <span class="rise inline-flex items-center gap-2 text-xs tracking-[4px] text-pink border border-pink/40 rounded-full px-3.5 py-1.5 bg-pink/5">
+      <span class="pulse-dot w-1.5 h-1.5 rounded-full bg-pink"></span>ROBLOX GAME STUDIO
     </span>
 
-    <h1 class="font-disp uppercase font-extrabold leading-[0.92] mt-4 text-[48px] md:text-[108px]">
+    <h1 class="rise grad-text font-disp uppercase font-black leading-[0.9] mt-5 text-[56px] sm:text-[84px] md:text-[132px]" style="animation-delay:.08s">
       SYLIZ<br>STUDIO
     </h1>
 
-    <div class="w-16 h-[3px] bg-pink rounded my-4"></div>
+    <div class="rise w-20 h-[3px] bg-gradient-to-r from-pink to-lav rounded my-5" style="animation-delay:.16s"></div>
 
-    <p class="max-w-[560px] text-sm leading-[1.8] text-muted">
+    <p class="rise max-w-[560px] text-sm leading-[1.8] text-muted" style="animation-delay:.22s">
       Small crew, sharp mechanics. We build fast-paced Roblox worlds and ship what we play ourselves.
     </p>
 
-    <a href="https://www.roblox.com/share/g/867218837" target="_blank" rel="noopener"
-       class="inline-flex items-center gap-2 mt-2 px-5 py-2.5 border border-pink rounded-full text-xs tracking-[1.5px] text-pink bg-pink/10 hover:bg-pink/20">
-      ▲ JOIN OUR ROBLOX GROUP
-    </a>
+    <div class="rise flex flex-wrap items-center gap-3 mt-6" style="animation-delay:.3s">
+      <a href="https://www.roblox.com/share/g/867218837" target="_blank" rel="noopener"
+         class="inline-flex items-center gap-2 px-6 py-3 border border-pink rounded-full text-xs tracking-[1.5px] text-pink bg-pink/10 hover:bg-pink hover:text-bg transition-colors">
+        ▲ JOIN OUR ROBLOX GROUP
+      </a>
+      <a href="#games" class="inline-flex items-center gap-2 px-6 py-3 border border-white/15 rounded-full text-xs tracking-[1.5px] text-muted hover:text-ink hover:border-lav transition-colors">
+        SEE OUR GAMES ↓
+      </a>
+    </div>
+
+    <div class="rise flex flex-wrap gap-x-10 gap-y-4 mt-12 pt-6 border-t border-white/10 max-w-[560px]" style="animation-delay:.4s">
+      <div><div class="font-disp font-bold text-4xl text-pink leading-none" id="statMembers">3</div><div class="text-[10px] tracking-[2px] text-muted mt-1.5">CREW MEMBERS</div></div>
+      <div><div class="font-disp font-bold text-4xl text-lav leading-none" id="statGames">1</div><div class="text-[10px] tracking-[2px] text-muted mt-1.5">GAMES</div></div>
+      <div><div class="font-disp font-bold text-4xl text-mint leading-none" id="statDev">1</div><div class="text-[10px] tracking-[2px] text-muted mt-1.5">IN DEVELOPMENT</div></div>
+    </div>
   </div>
 </section>
 
+<!-- MARQUEE: team usernames + logo separator -->
+<div class="border-y border-pink/25 bg-bg2/60 overflow-hidden py-3.5">
+  <div class="marquee-track flex items-center gap-8 font-disp font-bold text-xl tracking-[3px]" aria-hidden="true" id="marquee"></div>
+</div>
+
 <!-- GAMES -->
-<section id="games" class="px-6 md:px-14 py-20 scroll-mt-20">
-  <div class="text-xs tracking-[3px] text-lav mb-1.5">// OUR GAMES</div>
-  <h2 class="font-disp uppercase font-bold text-3xl mb-4">Our Games</h2>
-
-  <div class="flex gap-5 flex-wrap text-[10px] tracking-[1.5px] text-muted mb-7">
-    <span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-mint"></span>RELEASED</span>
-    <span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-pink"></span>IN DEVELOPMENT</span>
-    <span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-lav"></span>PLANNING</span>
-  </div>
-
-  <div class="flex flex-col md:flex-row gap-7 bg-bg2 border border-pink/35 rounded-2xl p-5">
-    <div class="relative w-full md:w-[280px] h-[180px] shrink-0 rounded-xl border border-dashed border-pink/30 overflow-hidden flex items-center justify-center text-center text-[11px] tracking-[2px] text-[#7A6B79] p-4"
-         style="background:linear-gradient(145deg,#2A1D2E,#1A1420)">
-      [ GAME COVER ART ]
-      <img src="LOGO.png" alt="Skyward cover" class="absolute inset-0 w-full h-full object-cover" onerror="this.remove()">
-    </div>
-    <div class="flex flex-col justify-center gap-3 py-2 px-1">
-      <div class="flex items-center gap-3 flex-wrap">
-        <h3 class="font-disp uppercase font-bold text-2xl">SKYWARD</h3>
-        <span class="flex items-center gap-1.5 text-[10px] tracking-[1.5px] border border-pink/40 text-pink rounded-full px-2.5 py-1">
-          <span class="w-1.5 h-1.5 rounded-full bg-pink"></span>IN DEVELOPMENT
-        </span>
+<section id="games" class="relative px-6 md:px-14 py-20 scroll-mt-16">
+  <div class="reveal">
+    <div class="flex items-end justify-between flex-wrap gap-3">
+      <div>
+        <div class="text-xs tracking-[3px] text-lav mb-1.5">// OUR GAMES</div>
+        <h2 class="font-disp uppercase font-bold text-4xl mb-4">Our Games</h2>
       </div>
-      <p class="max-w-[520px] text-[13px] leading-[1.7] text-muted">
-        A fast, parry-driven PvP arena game — broom-based movement, a 3-heart combat system,
-        and an escalating Final Phase when the match gets desperate.
-      </p>
+      <div id="gamesAdmin" class="mb-4"></div>
     </div>
+
+    <div class="flex gap-5 flex-wrap text-[10px] tracking-[1.5px] text-muted mb-8">
+      <span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-mint"></span>RELEASED</span>
+      <span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-pink"></span>IN DEVELOPMENT</span>
+      <span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-lav"></span>PLANNING</span>
+    </div>
+
+    <div id="gamesRoot" class="flex flex-col gap-6"></div>
   </div>
 </section>
 
 <!-- TEAM -->
-<section id="team" class="relative px-6 md:px-14 py-20 scroll-mt-20 overflow-hidden">
-  <div class="absolute top-64 -right-36 w-[560px] h-[560px] rounded-full pointer-events-none"
+<section id="team" class="relative px-6 md:px-14 py-20 scroll-mt-16 overflow-hidden">
+  <div class="drift absolute top-64 -right-36 w-[560px] h-[560px] rounded-full pointer-events-none"
        style="background:radial-gradient(circle,rgba(183,156,201,0.14),transparent 70%)"></div>
 
-  <div class="text-xs tracking-[3px] text-lav mb-1.5">// THE TEAM</div>
-  <h2 class="font-disp uppercase font-bold text-3xl mb-7">Who's Building This</h2>
-
-  <!-- OWNER -->
-  <div class="flex justify-center mb-14">
-    <a href="https://www.roblox.com/users/3616312318/profile" target="_blank" rel="noopener"
-       class="w-[220px] flex flex-col items-center gap-2 text-center bg-bg2 border border-pink rounded-2xl px-5 pt-6 pb-6 hover:-translate-y-1 transition-transform cursor-pointer"
-       style="box-shadow:0 0 32px rgba(242,168,199,0.12); text-decoration:none; color:inherit;">
-      <div class="w-16 h-16 rounded-full border-2 border-pink overflow-hidden flex items-center justify-center font-disp font-extrabold text-xl">
-        <img src="s.jpg" alt="Senz" class="w-full h-full object-cover scale-110">
-      </div>
-      <div class="font-bold text-[15px] tracking-wide">S</div>
-      <div class="text-[11px] text-muted tracking-wide -mt-1">WGSKEWk2</div>
-      <span class="text-[10px] tracking-[1.5px] font-bold bg-pink text-bg rounded-full px-3 py-1">OWNER</span>
-
-      <div class="flex gap-4 mt-3 pt-3 border-t border-white/10 w-full justify-center">
-        <span onclick="event.stopPropagation(); event.preventDefault(); window.open('https://discord.com/users/1005357318281641994','_blank');" aria-label="Discord" class="text-muted hover:text-pink cursor-pointer">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M7 8.5C9.5 7 14.5 7 17 8.5"/><path d="M6 9c-1.5 3-2 6-1.5 8.5 2 1.2 4 1.8 4 1.8l1-1.8"/><path d="M18 9c1.5 3 2 6 1.5 8.5-2 1.2-4 1.8-4 1.8l-1-1.8"/><ellipse cx="9.5" cy="13.5" rx="1.3" ry="1.6"/><ellipse cx="14.5" cy="13.5" rx="1.3" ry="1.6"/></svg>
-        </span>
-      </div>
-    </a>
+  <div class="relative">
+    <div class="text-xs tracking-[3px] text-lav mb-1.5">// THE TEAM</div>
+    <h2 class="font-disp uppercase font-bold text-4xl mb-9">Who's Building This</h2>
+    <div id="teamRoot"></div>
   </div>
-
-  <!-- CO-FOUNDERS -->
-  <div class="flex items-center gap-4 mb-5.5">
-    <div class="flex-1 h-px bg-lav/30"></div>
-    <span class="text-xs tracking-[3px] text-lav">CO-FOUNDERS</span>
-    <div class="flex-1 h-px bg-lav/30"></div>
-  </div>
-  <div class="flex justify-center gap-5 flex-wrap mb-14">
-    <a href="https://www.roblox.com/users/11697999041/profile" target="_blank" rel="noopener"
-       class="w-[170px] flex flex-col items-center gap-2 text-center bg-bg2 border border-lav rounded-2xl px-5 pt-6 pb-6 hover:-translate-y-1 transition-transform cursor-pointer"
-       style="text-decoration:none; color:inherit;">
-      <div class="w-16 h-16 rounded-full border-2 border-lav overflow-hidden flex items-center justify-center text-lg">
-        <img src="c1.jpg" alt="PWR" class="w-full h-full object-cover scale-110">
-      </div>
-      <div class="font-bold text-[15px] tracking-wide">Duckky Dev</div>
-      <div class="text-[11px] text-muted tracking-wide -mt-1">Prxy_DevTh</div>
-      <span class="text-[9px] tracking-[1.5px] border border-lav text-lav rounded-full px-2.5 py-0.5">CO-FOUNDER</span>
-
-      <div class="flex gap-4 mt-3 pt-3 border-t border-white/10 w-full justify-center">
-        <span onclick="event.stopPropagation(); event.preventDefault(); window.open('https://discord.com/users/874867427706560542','_blank');" aria-label="Discord" class="text-muted hover:text-lav cursor-pointer">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M7 8.5C9.5 7 14.5 7 17 8.5"/><path d="M6 9c-1.5 3-2 6-1.5 8.5 2 1.2 4 1.8 4 1.8l1-1.8"/><path d="M18 9c1.5 3 2 6 1.5 8.5-2 1.2-4 1.8-4 1.8l-1-1.8"/><ellipse cx="9.5" cy="13.5" rx="1.3" ry="1.6"/><ellipse cx="14.5" cy="13.5" rx="1.3" ry="1.6"/></svg>
-        </span>
-      </div>
-    </a>
-  </div>
-
-  <!-- DEVELOPERS -->
-  <div class="flex items-center gap-4 mb-5.5">
-    <div class="flex-1 h-px bg-mint/30"></div>
-    <span class="text-xs tracking-[3px] text-mint">DEVELOPERS</span>
-    <div class="flex-1 h-px bg-mint/30"></div>
-  </div>
-  <div class="flex justify-center gap-5 flex-wrap mb-14">
-    <a href="https://www.roblox.com/users/1404764448/profile" target="_blank" rel="noopener"
-       class="w-[170px] flex flex-col items-center gap-2 text-center bg-bg2 border border-mint rounded-2xl px-5 pt-6 pb-6 hover:-translate-y-1 transition-transform cursor-pointer"
-       style="text-decoration:none; color:inherit;">
-      <div class="w-16 h-16 rounded-full border-2 border-mint overflow-hidden flex items-center justify-center text-lg">
-        <img src="duck.gif" alt="PWR" class="w-full h-full object-cover scale-110">
-      </div>
-      <div class="font-bold text-[15px] tracking-wide">NEWJAA</div>
-      <div class="text-[11px] text-muted tracking-wide -mt-1">Dark_NightNew's</div>
-      <span class="text-[9px] tracking-[1.5px] border border-mint text-mint rounded-full px-2.5 py-0.5">DEVELOPER</span>
-
-      <div class="flex gap-4 mt-3 pt-3 border-t border-white/10 w-full justify-center">
-        <span onclick="event.stopPropagation(); event.preventDefault(); window.open('https://discord.com/users/1257356138672951391','_blank');" aria-label="Discord" class="text-muted hover:text-mint cursor-pointer">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M7 8.5C9.5 7 14.5 7 17 8.5"/><path d="M6 9c-1.5 3-2 6-1.5 8.5 2 1.2 4 1.8 4 1.8l1-1.8"/><path d="M18 9c1.5 3 2 6 1.5 8.5-2 1.2-4 1.8-4 1.8l-1-1.8"/><ellipse cx="9.5" cy="13.5" rx="1.3" ry="1.6"/><ellipse cx="14.5" cy="13.5" rx="1.3" ry="1.6"/></svg>
-        </span>
-      </div>
-    </a>
-  </div>
-
-  <!-- CM (COMMENTED OUT - UNCOMMENT WHEN READY)
-  <div class="flex items-center gap-4 mb-5.5">
-    <div class="flex-1 h-px bg-pink/30"></div>
-    <span class="text-xs tracking-[3px] text-pink">COMMUNITY MANAGERS</span>
-    <div class="flex-1 h-px bg-pink/30"></div>
-  </div>
-  <div class="flex justify-center gap-5 flex-wrap mb-14">
-    <a href="https://www.roblox.com/users/ROBLOX_USER_ID/profile" target="_blank" rel="noopener"
-       class="w-[170px] flex flex-col items-center gap-2 text-center bg-bg2 border border-pink rounded-2xl px-5 pt-6 pb-6 hover:-translate-y-1 transition-transform cursor-pointer"
-       style="text-decoration:none; color:inherit;">
-      <div class="w-16 h-16 rounded-full border-2 border-pink overflow-hidden flex items-center justify-center text-lg">
-        <img src="cm-avatar.jpg" alt="CM" class="w-full h-full object-cover scale-110">
-      </div>
-      <div class="font-bold text-[15px] tracking-wide">USERNAME</div>
-      <div class="text-[11px] text-muted tracking-wide -mt-1">roblox_username</div>
-      <span class="text-[9px] tracking-[1.5px] border border-pink text-pink rounded-full px-2.5 py-0.5">CM</span>
-
-      <div class="flex gap-4 mt-3 pt-3 border-t border-white/10 w-full justify-center">
-        <span onclick="event.stopPropagation(); event.preventDefault(); window.open('https://discord.com/users/DISCORD_USER_ID','_blank');" aria-label="Discord" class="text-muted hover:text-pink cursor-pointer">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M7 8.5C9.5 7 14.5 7 17 8.5"/><path d="M6 9c-1.5 3-2 6-1.5 8.5 2 1.2 4 1.8 4 1.8l1-1.8"/><path d="M18 9c1.5 3 2 6 1.5 8.5-2 1.2-4 1.8-4 1.8l-1-1.8"/><ellipse cx="9.5" cy="13.5" rx="1.3" ry="1.6"/><ellipse cx="14.5" cy="13.5" rx="1.3" ry="1.6"/></svg>
-        </span>
-      </div>
-    </a>
-  </div>
-  END CM SECTION -->
-
 </section>
 
-<footer class="border-t border-pink/35 px-6 md:px-14 py-5 flex justify-between items-center flex-wrap gap-2.5 text-[11px] tracking-wide text-[#7A6B79]">
+<footer class="border-t border-pink/35 px-6 md:px-14 py-5 pb-24 flex justify-between items-center flex-wrap gap-2.5 text-[11px] tracking-wide text-[#7A6B79]">
   <span>© SYLIZ STUDIO</span>
   <a href="https://www.roblox.com/share/g/867218837" target="_blank" rel="noopener" class="hover:text-pink">ROBLOX GROUP</a>
 </footer>
 
+<!-- ADMIN BAR -->
+<div id="adminBar" class="hidden fixed bottom-5 left-1/2 -translate-x-1/2 z-40 items-center gap-2 rounded-full border border-pink/50 bg-bg2/90 backdrop-blur-md px-3 py-2 max-w-[94vw] flex-wrap justify-center"
+     style="box-shadow:0 12px 40px -10px rgba(0,0,0,.8)"></div>
+
+<div id="toasts" class="fixed top-20 right-4 z-[60] flex flex-col gap-2 pointer-events-none"></div>
+
+<script>
+/* ============================================================
+   CONFIG — อ่านจาก Vercel Environment Variables ผ่าน /api/config
+     SUPABASE_URL
+     SUPABASE_PUBLISHABLE_KEY
+   (ไม่ฝัง key ไว้ในไฟล์นี้)
+   ============================================================ */
+let sb = null;
+
+const SECTIONS = [['top', 'HOME'], ['games', 'GAMES'], ['team', 'TEAM']];
+const STATUS = {
+  released:    { label: 'RELEASED',        c: '#8BC7B5' },
+  development: { label: 'IN DEVELOPMENT',  c: '#F2A8C7' },
+  planning:    { label: 'PLANNING',        c: '#B79CC9' },
+};
+
+/* ---------- ข้อมูลเดิม (fallback เมื่อ DB ยังไม่พร้อม) ---------- */
+const R = n => `00000000-0000-0000-0000-00000000000${n}`;
+const FB_ROLES = [
+  { id: R(1), label: 'OWNER',             plural_label: 'OWNER',              color: '#F2A8C7', sort_order: 0, featured: true,  icon: 'crown' },
+  { id: R(2), label: 'CO-FOUNDER',        plural_label: 'CO-FOUNDERS',        color: '#B79CC9', sort_order: 1, featured: false, icon: 'flag' },
+  { id: R(3), label: 'DEVELOPER',         plural_label: 'DEVELOPERS',         color: '#8BC7B5', sort_order: 2, featured: false, icon: 'code' },
+  { id: R(4), label: 'COMMUNITY MANAGER', plural_label: 'COMMUNITY MANAGERS', color: '#F2A8C7', sort_order: 3, featured: false, icon: 'chat' },
+  { id: R(5), label: 'MODELER',           plural_label: 'MODELERS',           color: '#8BB9F2', sort_order: 4, featured: false, icon: 'cube' },
+  { id: R(6), label: 'VFX ARTIST',        plural_label: 'VFX ARTISTS',        color: '#F2C98B', sort_order: 5, featured: false, icon: 'sparkles' },
+  { id: R(7), label: 'UX/UI DESIGNER',    plural_label: 'UX/UI DESIGNERS',    color: '#C9F28B', sort_order: 6, featured: false, icon: 'layers' },
+];
+const FB_MEMBERS = [
+  { id: 'fb1', name: 'S',          handle: 'WGSKEWk2',         roblox_id: '3616312318',  discord_id: '1005357318281641994', avatar_url: 's.jpg',    role_id: R(1), sort_order: 0 },
+  { id: 'fb2', name: 'Duckky Dev', handle: 'Prxy_DevTh',       roblox_id: '11697999041', discord_id: '874867427706560542',  avatar_url: 'c1.jpg',   role_id: R(2), sort_order: 0 },
+  { id: 'fb3', name: 'NEWJAA',     handle: "Dark_NightNew's",  roblox_id: '1404764448',  discord_id: '1257356138672951391', avatar_url: 'duck.gif', role_id: R(3), sort_order: 0 },
+];
+const FB_GAMES = [
+  { id: 'fbg1', title: 'SKYWARD', status: 'development', cover_url: 'LOGO.png', link_url: '', sort_order: 0,
+    description: 'A fast, parry-driven PvP arena game — broom-based movement, a 3-heart combat system, and an escalating Final Phase when the match gets desperate.',
+    tags: 'PARRY PVP,BROOM MOVEMENT,3-HEART COMBAT,FINAL PHASE' },
+];
+const SWATCHES = ['#F2A8C7', '#B79CC9', '#8BC7B5', '#F2C98B', '#8BB9F2', '#F28B8B', '#C9F28B', '#F5EDF2'];
+
+/* ไอคอนตำแหน่ง (stroke, 24x24) */
+const IC = {
+  crown:    '<path d="M3 8l4.5 4L12 5l4.5 7L21 8l-2 11H5z"/>',
+  flag:     '<path d="M5 21V4"/><path d="M5 4h12l-2.5 4L17 12H5"/>',
+  code:     '<rect x="3" y="4" width="18" height="16" rx="4"/><path d="M8 10l3 2.5L8 15"/><path d="M13 15.5h4"/>',
+  layers:   '<path d="M12 3l9 5-9 5-9-5z"/><path d="M3 12.5l9 5 9-5"/><path d="M3 16.5l9 5 9-5"/>',
+  cube:     '<path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M12 12l8-4.5M12 12v9M12 12L4 7.5"/>',
+  sparkles: '<path d="M11 3l1.8 5.2L18 10l-5.2 1.8L11 17l-1.8-5.2L4 10l5.2-1.8z"/><path d="M19 15l.7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7z"/>',
+  chat:     '<path d="M20 12a8 8 0 01-11.5 7.2L4 20l1-4A8 8 0 1120 12z"/><path d="M9 11h6M9 14h3"/>',
+  palette:  '<path d="M12 3a9 9 0 100 18c1.2 0 1.8-.8 1.5-1.8-.4-1.2.3-2.2 1.5-2.2H17a4 4 0 004-4c0-5-4-10-9-10z"/><circle cx="8" cy="11" r="1"/><circle cx="12" cy="7.5" r="1"/><circle cx="16" cy="11" r="1"/>',
+  pen:      '<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z"/>',
+  music:    '<path d="M9 18V6l11-2v12"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="17.5" cy="16" r="2.5"/>',
+  film:     '<rect x="3" y="5" width="18" height="14" rx="3"/><path d="M10 9.5l5 2.5-5 2.5z"/>',
+  bug:      '<rect x="7" y="9" width="10" height="11" rx="5"/><path d="M9 8a3 3 0 016 0v1H9zM12 9v11M3 13h4M17 13h4M4 7l3 2M20 7l-3 2M4 19l3-2M20 19l-3-2"/>',
+  bolt:     '<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>',
+  shield:   '<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/>',
+  star:     '<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/>',
+  globe:    '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/>',
+};
+const svgIcon = (key, size) => `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${IC[key] || IC.star}</svg>`;
+const roleIcon = (key, color, size = 28) => `<span class="ric" style="--c:${safeCol(color)};width:${size}px;height:${size}px">${svgIcon(key, Math.round(size * 0.58))}</span>`;
+
+/* ---------- helpers ---------- */
+const $ = (s, r = document) => r.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const safeImg = u => (/^(https:\/\/|[\w.\-\/]+$)/i.test(u || '') ? u : '');
+const safeCol = c => (/^#[0-9a-f]{6}$/i.test(c || '') ? c : '#F2A8C7');
+const safeLink = u => (/^https?:\/\//i.test(u || '') ? u : '');
+const bySort = (a, b) => (a.sort_order - b.sort_order) || String(a.created_at || '').localeCompare(String(b.created_at || ''));
+const digits = v => { const s = String(v || ''); const m = s.match(/users\/(\d+)/) || s.match(/^\s*(\d+)\s*$/); return m ? m[1] : null; };
+
+const ICON = {
+  discord: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M7 8.5C9.5 7 14.5 7 17 8.5"/><path d="M6 9c-1.5 3-2 6-1.5 8.5 2 1.2 4 1.8 4 1.8l1-1.8"/><path d="M18 9c1.5 3 2 6 1.5 8.5-2 1.2-4 1.8-4 1.8l-1-1.8"/><ellipse cx="9.5" cy="13.5" rx="1.3" ry="1.6"/><ellipse cx="14.5" cy="13.5" rx="1.3" ry="1.6"/></svg>',
+  plus:  '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
+  edit:  '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z"/></svg>',
+  trash: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg>',
+  left:  '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>',
+  right: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>',
+  upA:   '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 15l7-7 7 7"/></svg>',
+  downA: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 9l7 7 7-7"/></svg>',
+  out:   '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>',
+  shield:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/></svg>',
+  close: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+  menu:  '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>',
+};
+
+function toast(msg, type = 'ok') {
+  const t = document.createElement('div');
+  t.className = 'pointer-events-auto text-xs px-4 py-2.5 rounded-xl border backdrop-blur max-w-[320px] ' +
+    (type === 'err' ? 'bg-[#2a1618]/95 border-[#F28B8B]/60 text-[#F5B5B5]' : 'bg-bg2/95 border-pink/50 text-ink');
+  t.textContent = msg;
+  $('#toasts').appendChild(t);
+  setTimeout(() => { t.style.transition = 'opacity .4s'; t.style.opacity = 0; setTimeout(() => t.remove(), 400); }, 3800);
+}
+
+/* ---------- state ---------- */
+const state = { roles: [], members: [], games: [], user: null, name: '', avatar: '', discordId: '', level: null, fallback: false, gamesFallback: false };
+
+async function loadData() {
+  if (sb) {
+    try {
+      const [r, m, g] = await Promise.all([
+        sb.from('roles').select('*').order('sort_order'),
+        sb.from('members').select('*').order('sort_order'),
+        sb.from('games').select('*').order('sort_order'),
+      ]);
+      if (r.error) throw r.error;
+      if (m.error) throw m.error;
+      if (r.data.length) {
+        state.roles = r.data; state.members = m.data; state.fallback = false;
+        if (g.error) { console.error('[SYLIZ] games:', g.error); state.games = FB_GAMES; state.gamesFallback = true; }
+        else { state.games = g.data; state.gamesFallback = false; }
+        renderAll(); return;
+      }
+    } catch (e) { console.error('[SYLIZ] โหลดข้อมูลจาก Supabase ไม่สำเร็จ', e); }
+  }
+  state.roles = FB_ROLES; state.members = FB_MEMBERS; state.games = FB_GAMES;
+  state.fallback = true; state.gamesFallback = true; renderAll();
+}
+function renderAll() { renderTeam(); renderGames(); renderMarquee(); renderStats(); }
+
+/* ---------- nav: sections + scrollspy ---------- */
+function buildNav() {
+  const html = SECTIONS.map(([id, l]) => `<a href="#${id}" data-nav="${id}" class="nav-link">${l}</a>`).join('');
+  $('#navLinks').innerHTML = html;
+  $('#mobileMenu').innerHTML = html;
+  $('#mobileMenu').addEventListener('click', e => { if (e.target.closest('a')) closeMenu(); });
+}
+function closeMenu() { const m = $('#mobileMenu'); m.classList.add('hidden'); m.classList.remove('flex'); $('#burger').innerHTML = ICON.menu; }
+function toggleMenu() {
+  const m = $('#mobileMenu'); const open = m.classList.contains('hidden');
+  m.classList.toggle('hidden', !open); m.classList.toggle('flex', open);
+  $('#burger').innerHTML = open ? ICON.close : ICON.menu;
+}
+function spy() {
+  const y = scrollY + 110; let cur = SECTIONS[0][0];
+  SECTIONS.forEach(([id]) => { const el = document.getElementById(id); if (el && el.getBoundingClientRect().top + scrollY <= y) cur = id; });
+  if (innerHeight + scrollY >= document.documentElement.scrollHeight - 6) cur = SECTIONS[SECTIONS.length - 1][0];
+  document.querySelectorAll('[data-nav]').forEach(a => a.classList.toggle('active', a.dataset.nav === cur));
+  const h = document.documentElement, max = h.scrollHeight - innerHeight;
+  $('#prog').style.transform = `scaleX(${max > 0 ? Math.min(1, Math.max(0, scrollY / max)) : 0})`;
+}
+addEventListener('scroll', spy, { passive: true });
+addEventListener('resize', spy);
+
+/* ---------- render: marquee (ชื่อ user ในทีม + โลโก้เดิม) ---------- */
+function renderMarquee() {
+  const roleOrder = Object.fromEntries([...state.roles].sort(bySort).map((r, i) => [r.id, i]));
+  const roleById = Object.fromEntries(state.roles.map(r => [r.id, r]));
+  const people = [...state.members].sort((a, b) => ((roleOrder[a.role_id] ?? 99) - (roleOrder[b.role_id] ?? 99)) || bySort(a, b));
+  const sep = `<span class="shrink-0 flex items-center text-pink"><img src="L1.png" alt="" class="w-7 h-7 object-contain" onerror="this.replaceWith(document.createTextNode('✦'))"></span>`;
+  let items = people.map(m => {
+    const c = safeCol(roleById[m.role_id]?.color);
+    return `<span style="color:${c}">${esc(m.handle || m.name)}</span>${sep}`;
+  });
+  if (!items.length) items = [`<span class="text-lav">SYLIZ STUDIO</span>${sep}`];
+  const reps = Math.max(2, Math.ceil(10 / items.length));
+  const half = Array(reps).fill(items.join('')).join('');
+  $('#marquee').innerHTML = half + half;
+}
+
+function renderStats() {
+  $('#statMembers').textContent = state.members.length;
+  $('#statGames').textContent = state.games.length;
+  $('#statDev').textContent = state.games.filter(g => g.status === 'development').length;
+}
+
+/* ---------- render: games ---------- */
+function gameHTML(g, i, adm) {
+  const st = STATUS[g.status] || STATUS.development;
+  const cover = safeImg(g.cover_url);
+  const tags = String(g.tags || '').split(',').map(s => s.trim()).filter(Boolean);
+  const link = safeLink(g.link_url);
+  return `<div class="gcard group flex flex-col md:flex-row gap-7 bg-bg2 rounded-2xl p-5" style="--c:${st.c};--i:${i}">
+    <div class="relative w-full md:w-[320px] h-[200px] shrink-0 rounded-xl border border-dashed border-pink/30 overflow-hidden flex items-center justify-center text-center text-[11px] tracking-[2px] text-[#7A6B79] p-4"
+         style="background:linear-gradient(145deg,#2A1D2E,#1A1420)">
+      [ GAME COVER ART ]
+      ${cover ? `<img src="${esc(cover)}" alt="${esc(g.title)} cover" class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" onerror="this.remove()">` : ''}
+    </div>
+    <div class="flex flex-col justify-center gap-3.5 py-2 px-1 flex-1 min-w-0">
+      <div class="flex items-center gap-3 flex-wrap">
+        <h3 class="font-disp uppercase font-bold text-3xl">${esc(g.title)}</h3>
+        <span class="flex items-center gap-1.5 text-[10px] tracking-[1.5px] rounded-full px-2.5 py-1" style="border:1px solid color-mix(in srgb,${st.c} 45%,transparent);color:${st.c}">
+          <span class="w-1.5 h-1.5 rounded-full" style="background:${st.c}"></span>${st.label}
+        </span>
+      </div>
+      ${g.description ? `<p class="max-w-[520px] text-[13px] leading-[1.7] text-muted">${esc(g.description)}</p>` : ''}
+      ${tags.length ? `<div class="flex flex-wrap gap-2 mt-1">${tags.map(t => `<span class="text-[10px] tracking-[1.5px] px-2.5 py-1 rounded-full border border-lav/40 text-lav">${esc(t.toUpperCase())}</span>`).join('')}</div>` : ''}
+      ${link ? `<div><a href="${esc(link)}" target="_blank" rel="noopener" class="inline-flex items-center gap-2 mt-1 px-5 py-2 rounded-full text-[11px] tracking-[1.5px] font-bold" style="background:${st.c};color:#17111B;text-decoration:none">${g.status === 'released' ? '▶ PLAY NOW' : '↗ OPEN PAGE'}</a></div>` : ''}
+      ${adm ? `<div class="flex gap-1.5 mt-1 pt-3 border-t border-white/10">
+        <button type="button" class="ibtn" data-act="move" data-kind="game" data-dir="-1" data-id="${g.id}" title="เลื่อนขึ้น">${ICON.upA}</button>
+        <button type="button" class="ibtn" data-act="move" data-kind="game" data-dir="1" data-id="${g.id}" title="เลื่อนลง">${ICON.downA}</button>
+        <button type="button" class="ibtn" data-act="edit-game" data-id="${g.id}" title="แก้ไข">${ICON.edit}</button>
+        <button type="button" class="ibtn danger" data-act="del-game" data-id="${g.id}" title="ลบ">${ICON.trash}</button>
+      </div>` : ''}
+    </div>
+  </div>`;
+}
+
+function renderGames() {
+  const adm = !!state.level;
+  const games = [...state.games].sort(bySort);
+  $('#gamesRoot').innerHTML = games.length
+    ? games.map((g, i) => gameHTML(g, i, adm)).join('')
+    : `<div class="text-muted text-sm border border-dashed border-white/15 rounded-xl px-5 py-8 text-center tracking-wide">MORE COMING SOON</div>`;
+  $('#gamesAdmin').innerHTML = adm
+    ? `<button type="button" class="btn btn-p inline-flex items-center gap-1.5" data-act="add-game">${ICON.plus} เพิ่มแมพ</button>` : '';
+}
+
+/* ---------- render: team ---------- */
+function avatarHTML(m, size) {
+  const src = safeImg(m.avatar_url);
+  const init = esc((m.name || '?').trim().charAt(0).toUpperCase());
+  return `<div class="ring rounded-full overflow-hidden flex items-center justify-center font-disp font-extrabold text-xl bg-bg" style="width:${size}px;height:${size}px">
+    ${src ? `<img src="${esc(src)}" alt="${esc(m.name)}" class="w-full h-full object-cover scale-110" onerror="this.replaceWith(document.createTextNode('${init}'))">` : init}
+  </div>`;
+}
+
+function cardHTML(m, role, i, adm) {
+  const c = safeCol(role.color);
+  const big = role.featured;
+  const href = m.roblox_id ? `https://www.roblox.com/users/${encodeURIComponent(m.roblox_id)}/profile` : '';
+  const tag = href ? 'a' : 'div';
+  const attrs = href ? `href="${href}" target="_blank" rel="noopener"` : '';
+  const badge = big
+    ? `<span class="inline-flex items-center gap-1.5 text-[10px] tracking-[1.5px] font-bold rounded-full px-3 py-1" style="background:${c};color:#17111B">${svgIcon(role.icon, 12)}${esc(role.label)}</span>`
+    : `<span class="inline-flex items-center gap-1.5 text-[9px] tracking-[1.5px] rounded-full px-2.5 py-0.5" style="border:1px solid ${c};color:${c}">${svgIcon(role.icon, 11)}${esc(role.label)}</span>`;
+  const discord = m.discord_id
+    ? `<span data-act="open" data-url="https://discord.com/users/${esc(m.discord_id)}" aria-label="Discord" class="text-muted hover:text-white cursor-pointer">${ICON.discord}</span>` : '';
+  const ctrl = adm ? `
+    <div class="flex gap-1.5 justify-center ${discord ? 'ml-2 pl-3 border-l border-white/10' : ''}">
+      <button type="button" class="ibtn" data-act="move" data-kind="member" data-dir="-1" data-id="${m.id}" title="เลื่อนซ้าย">${ICON.left}</button>
+      <button type="button" class="ibtn" data-act="edit-member" data-id="${m.id}" title="แก้ไข">${ICON.edit}</button>
+      <button type="button" class="ibtn danger" data-act="del-member" data-id="${m.id}" title="ลบ">${ICON.trash}</button>
+      <button type="button" class="ibtn" data-act="move" data-kind="member" data-dir="1" data-id="${m.id}" title="เลื่อนขวา">${ICON.right}</button>
+    </div>` : '';
+  return `<${tag} ${attrs} class="mcard ${big ? 'big' : ''}" style="--c:${c};--i:${i};width:${big ? 240 : 190}px">
+    ${avatarHTML(m, big ? 80 : 64)}
+    <div class="font-bold ${big ? 'text-base' : 'text-[15px]'} tracking-wide mt-1">${esc(m.name)}</div>
+    ${m.handle ? `<div class="text-[11px] text-muted tracking-wide -mt-1.5">${esc(m.handle)}</div>` : ''}
+    ${badge}
+    ${(discord || ctrl) ? `<div class="flex items-center justify-center mt-3 pt-3 border-t border-white/10 w-full flex-wrap gap-y-2">${discord}${ctrl}</div>` : ''}
+  </${tag}>`;
+}
+
+function renderTeam() {
+  const root = $('#teamRoot');
+  const adm = !!state.level;
+  const roles = [...state.roles].sort(bySort);
+  let html = '';
+  roles.forEach(r => {
+    const ms = state.members.filter(m => m.role_id === r.id).sort(bySort);
+    if (!ms.length && !adm) return;
+    const c = safeCol(r.color);
+    const line = `<div class="flex-1 h-px" style="background:color-mix(in srgb,${c} 30%,transparent)"></div>`;
+    const controls = adm ? `<span class="flex gap-1.5">
+        <button type="button" class="ibtn" data-act="move" data-kind="role" data-dir="-1" data-id="${r.id}" title="เลื่อนตำแหน่งขึ้น">${ICON.upA}</button>
+        <button type="button" class="ibtn" data-act="move" data-kind="role" data-dir="1" data-id="${r.id}" title="เลื่อนตำแหน่งลง">${ICON.downA}</button>
+        <button type="button" class="ibtn" data-act="add-member" data-role="${r.id}" title="เพิ่มสมาชิกในตำแหน่งนี้">${ICON.plus}</button>
+        <button type="button" class="ibtn" data-act="edit-role" data-id="${r.id}" title="แก้ไขตำแหน่ง">${ICON.edit}</button>
+      </span>` : '';
+    const showHeader = !r.featured || adm;
+    const header = showHeader ? `<div class="flex items-center gap-4 mb-6">${line}
+        <span class="flex items-center gap-2.5 text-xs tracking-[3px]" style="color:${c}">${roleIcon(r.icon, c, 30)}${esc(r.featured ? r.label : (r.plural_label || r.label))}${!ms.length ? '<span class="text-[9px] tracking-[1.5px] px-2 py-0.5 rounded-full border border-white/20 text-muted">HIDDEN</span>' : ''}</span>${controls}${line}</div>` : '';
+    const cards = ms.map((m, i) => cardHTML(m, r, i, adm)).join('');
+    const empty = (!ms.length && adm) ? `<div class="text-[11px] text-muted/70 border border-dashed border-white/15 rounded-xl px-5 py-4">ตำแหน่งนี้ซ่อนอยู่บนหน้าเว็บ — จะแสดงเมื่อเพิ่มสมาชิกคนแรก</div>` : '';
+    html += `<div class="mb-14">${header}<div class="flex justify-center gap-5 flex-wrap">${cards}${empty}</div></div>`;
+  });
+  root.innerHTML = html || '<div class="text-muted text-sm">No members yet.</div>';
+}
+
+/* ---------- render: auth + toolbar ---------- */
+function renderAuth() {
+  const box = $('#authArea');
+  if (!state.user) {
+    box.innerHTML = `<button type="button" data-act="login" class="btn-login">${ICON.discord}<span class="hidden sm:inline">LOGIN</span></button>`;
+    return;
+  }
+  const label = state.level === 'owner' ? 'OWNER' : state.level ? 'ADMIN' : 'VIEWER';
+  const av = state.avatar
+    ? `<img src="${esc(state.avatar)}" alt="" class="w-6 h-6 rounded-full object-cover">`
+    : `<span class="w-6 h-6 rounded-full bg-lav/40 inline-block"></span>`;
+  box.innerHTML = `
+    <button type="button" data-act="copy-id" class="chip" title="Discord ID: ${esc(state.discordId)} (คลิกเพื่อคัดลอก)">
+      ${av}<span class="hidden md:inline max-w-[110px] truncate">${esc(state.name)}</span><span class="tag ${state.level ? '' : 'viewer'}">${label}</span>
+    </button>
+    <button type="button" data-act="logout" class="ibtn" title="Logout">${ICON.out}</button>`;
+}
+
+function renderToolbar() {
+  const bar = $('#adminBar');
+  if (!state.level) { bar.classList.add('hidden'); bar.classList.remove('flex'); bar.innerHTML = ''; return; }
+  bar.classList.remove('hidden'); bar.classList.add('flex');
+  bar.innerHTML = `
+    <span class="text-[10px] tracking-[2px] text-pink px-1.5 flex items-center gap-1.5"><span class="pulse-dot w-1.5 h-1.5 rounded-full bg-pink"></span>ADMIN MODE</span>
+    <button type="button" class="btn btn-p inline-flex items-center gap-1.5" data-act="add-member" data-role="">${ICON.plus} สมาชิก</button>
+    <button type="button" class="btn btn-p inline-flex items-center gap-1.5" data-act="add-game">${ICON.plus} แมพ</button>
+    <button type="button" class="btn btn-g inline-flex items-center gap-1.5" data-act="add-role">${ICON.plus} ตำแหน่ง</button>`;
+}
+
+/* ---------- auth ---------- */
+async function handleSession(session) {
+  state.user = session?.user || null; state.level = null;
+  if (state.user) {
+    const md = state.user.user_metadata || {};
+    const idn = (state.user.identities || []).find(i => i.provider === 'discord')?.identity_data || {};
+    state.name = md.full_name || md.name || md.user_name || 'Discord user';
+    state.avatar = md.avatar_url || '';
+    state.discordId = idn.provider_id || idn.sub || md.provider_id || md.sub || '';
+    const { data, error } = await sb.rpc('admin_level');
+    if (error) { console.error(error); toast('เช็คสิทธิ์ไม่ได้ — ยังไม่ได้รัน setup.sql ใช่ไหม?', 'err'); }
+    else state.level = data || null;
+    if (!state.level && !error) toast('ล็อกอินแล้ว แต่บัญชีนี้ไม่มีสิทธิ์แก้ไข', 'err');
+    else if (state.level) toast(`ยินดีต้อนรับ ${state.name} (${state.level.toUpperCase()})`);
+  }
+  renderAuth(); renderToolbar(); renderTeam(); renderGames();
+}
+
+async function login() {
+  if (!sb) { toast('ยังไม่ได้ตั้ง env SUPABASE_URL / SUPABASE_PUBLISHABLE_KEY บน Vercel', 'err'); return; }
+  const { error } = await sb.auth.signInWithOAuth({
+    provider: 'discord',
+    options: { redirectTo: location.origin + location.pathname, scopes: 'identify' },
+  });
+  if (error) toast(error.message, 'err');
+}
+
+/* ---------- modal ---------- */
+function openModal({ title, body, submit = 'SAVE', onSubmit, extraFoot = '' }) {
+  const wrap = document.createElement('div');
+  wrap.className = 'modal-wrap fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm';
+  wrap.innerHTML = `<form class="modal" autocomplete="off">
+    <div class="flex items-center justify-between px-5 pt-5 pb-3">
+      <h3 class="font-disp uppercase font-bold text-2xl">${title}</h3>
+      <button type="button" class="ibtn" data-close>✕</button>
+    </div>
+    <div class="px-5 pb-2 flex flex-col gap-3.5">${body}</div>
+    <div class="flex items-center justify-between gap-2 px-5 py-4">
+      <div>${extraFoot}</div>
+      <div class="flex gap-2"><button type="button" class="btn btn-g" data-close>CANCEL</button><button class="btn btn-p">${submit}</button></div>
+    </div></form>`;
+  document.body.appendChild(wrap);
+  const form = $('form', wrap);
+  const close = () => wrap.remove();
+  wrap.addEventListener('mousedown', e => { if (e.target === wrap) close(); });
+  wrap.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', close));
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    const btn = $('.btn-p', form), t = btn.textContent;
+    btn.disabled = true; btn.textContent = '...';
+    try { await onSubmit(new FormData(form), form); close(); }
+    catch (err) { console.error(err); toast(err.message || 'เกิดข้อผิดพลาด', 'err'); btn.disabled = false; btn.textContent = t; }
+  });
+  return { wrap, form, close };
+}
+
+/* ---------- image upload ---------- */
+async function resizeImage(file, { square, max }) {
+  const bmp = await createImageBitmap(file);
+  let sx = 0, sy = 0, sw = bmp.width, sh = bmp.height, tw, th;
+  if (square) { const s = Math.min(sw, sh); sx = (sw - s) / 2; sy = (sh - s) / 2; sw = sh = s; tw = th = max; }
+  else { const k = Math.min(1, max / sw); tw = Math.round(sw * k); th = Math.round(sh * k); }
+  const cv = document.createElement('canvas'); cv.width = tw; cv.height = th;
+  cv.getContext('2d').drawImage(bmp, sx, sy, sw, sh, 0, 0, tw, th);
+  return new Promise(res => cv.toBlob(res, square ? 'image/jpeg' : 'image/webp', 0.9));
+}
+async function uploadImage(file, folder, square) {
+  if (!file.type.startsWith('image/')) throw new Error('ไฟล์ต้องเป็นรูปภาพ');
+  let blob = file, ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+  if (file.type === 'image/gif') { if (file.size > 3 * 1024 * 1024) throw new Error('GIF ต้องไม่เกิน 3MB'); }
+  else {
+    blob = await resizeImage(file, { square, max: square ? 320 : 1000 });
+    ext = { 'image/jpeg': 'jpg', 'image/webp': 'webp', 'image/png': 'png' }[blob.type] || 'jpg';
+  }
+  const path = `${folder}/${crypto.randomUUID()}.${ext}`;
+  const { error } = await sb.storage.from('team').upload(path, blob, { contentType: blob.type, cacheControl: '31536000' });
+  if (error) throw error;
+  return sb.storage.from('team').getPublicUrl(path).data.publicUrl;
+}
+
+/* ---------- guard ---------- */
+function guard(kind) {
+  if (!state.level) { toast('ไม่มีสิทธิ์', 'err'); return false; }
+  if (kind === 'game') {
+    if (state.gamesFallback) { toast('ยังไม่มีตาราง games — รัน setup.sql (เวอร์ชันใหม่) ใน Supabase ก่อน', 'err'); return false; }
+    return true;
+  }
+  if (state.fallback) { toast('ฐานข้อมูลยังว่าง — รัน setup.sql ใน Supabase ก่อน', 'err'); return false; }
+  return true;
+}
+const run = fn => fn().catch(err => { console.error(err); toast(err.message || 'เกิดข้อผิดพลาด', 'err'); });
+
+/* ---------- reorder (สมาชิก / แมพ / ตำแหน่ง) ---------- */
+async function reorder(kind, id, dir) {
+  if (!guard(kind)) return;
+  const table = { member: 'members', game: 'games', role: 'roles' }[kind];
+  let list;
+  if (kind === 'member') { const m = state.members.find(x => x.id === id); list = state.members.filter(x => x.role_id === m.role_id); }
+  else list = kind === 'game' ? state.games : state.roles;
+  const arr = [...list].sort(bySort);
+  const i = arr.findIndex(x => x.id === id), j = i + dir;
+  if (i < 0 || j < 0 || j >= arr.length) return;
+  [arr[i], arr[j]] = [arr[j], arr[i]];
+  const res = await Promise.all(arr.map((x, k) => sb.from(table).update({ sort_order: k }).eq('id', x.id)));
+  const bad = res.find(r => r.error); if (bad) throw bad.error;
+  await loadData();
+}
+
+/* ---------- member CRUD ---------- */
+function memberModal(m, roleId) {
+  if (!guard('member')) return;
+  const edit = !!m;
+  const roles = [...state.roles].sort(bySort);
+  const sel = m?.role_id || roleId || roles[0]?.id;
+  const opts = roles.map(r => `<option value="${r.id}" ${r.id === sel ? 'selected' : ''}>${esc(r.label)}</option>`).join('');
+  const cur = safeImg(m?.avatar_url);
+  openModal({
+    title: edit ? 'แก้ไขสมาชิก' : 'เพิ่มสมาชิก',
+    submit: edit ? 'SAVE' : 'ADD',
+    body: `
+      <div class="flex items-center gap-4">
+        <div id="pv" class="w-[72px] h-[72px] rounded-full border-2 border-pink overflow-hidden bg-bg flex items-center justify-center text-muted text-[10px] shrink-0">
+          ${cur ? `<img src="${esc(cur)}" class="w-full h-full object-cover">` : 'NO IMG'}
+        </div>
+        <div class="flex-1"><label class="lbl">รูปโปรไฟล์ * (JPG / PNG / GIF)</label><input type="file" name="avatar" accept="image/*" class="fld" style="padding:.45rem .6rem" ${cur ? '' : 'required'}></div>
+      </div>
+      <div><label class="lbl">ชื่อที่แสดง *</label><input name="name" class="fld" required maxlength="40" value="${esc(m?.name)}"></div>
+      <div><label class="lbl">ยูสเซอร์เนม Roblox (ขึ้นในแถบวิ่ง)</label><input name="handle" class="fld" maxlength="40" value="${esc(m?.handle)}"></div>
+      <div><label class="lbl">Roblox ID หรือลิงก์โปรไฟล์</label><input name="roblox" class="fld" value="${esc(m?.roblox_id)}" placeholder="3616312318 หรือ https://www.roblox.com/users/.../profile">
+        <div class="hint">ใช้สร้างลิงก์เมื่อคลิกการ์ด</div></div>
+      <div><label class="lbl">Discord ID</label><input name="discord" class="fld" inputmode="numeric" value="${esc(m?.discord_id)}" placeholder="เช่น 1005357318281641994">
+        <div class="hint">Discord → Settings → Advanced → เปิด Developer Mode → คลิกขวาที่ชื่อ → Copy User ID</div></div>
+      <div><label class="lbl">ตำแหน่ง</label><select name="role" class="fld">${opts}</select></div>`,
+    onSubmit: async (fd, form) => {
+      const name = String(fd.get('name') || '').trim();
+      if (!name) throw new Error('กรอกชื่อก่อน');
+      let avatar = m?.avatar_url || null;
+      const file = form.querySelector('[name=avatar]').files[0];
+      if (file) avatar = await uploadImage(file, 'avatars', true);
+      if (!avatar) throw new Error('ต้องใส่รูปโปรไฟล์ก่อน ถึงจะแสดงบนหน้าเว็บ');
+      const row = {
+        name, handle: String(fd.get('handle') || '').trim() || null,
+        roblox_id: digits(fd.get('roblox')),
+        discord_id: (String(fd.get('discord') || '').match(/\d+/) || [null])[0],
+        role_id: fd.get('role'), avatar_url: avatar,
+      };
+      if (edit) {
+        const { error } = await sb.from('members').update(row).eq('id', m.id);
+        if (error) throw error;
+      } else {
+        const sibs = state.members.filter(x => x.role_id === row.role_id);
+        row.sort_order = sibs.length ? Math.max(...sibs.map(x => x.sort_order)) + 1 : 0;
+        const { error } = await sb.from('members').insert(row);
+        if (error) throw error;
+      }
+      await loadData(); toast(edit ? 'บันทึกแล้ว' : 'เพิ่มสมาชิกแล้ว');
+    },
+  }).form.querySelector('[name=avatar]').addEventListener('change', e => {
+    const f = e.target.files[0]; if (!f) return;
+    $('#pv').innerHTML = `<img src="${URL.createObjectURL(f)}" class="w-full h-full object-cover">`;
+  });
+}
+
+async function deleteMember(id) {
+  if (!guard('member')) return;
+  const m = state.members.find(x => x.id === id);
+  if (!confirm(`ลบ "${m?.name}" ออกจากทีม?`)) return;
+  const { error } = await sb.from('members').delete().eq('id', id);
+  if (error) throw error;
+  await loadData(); toast('ลบแล้ว');
+}
+
+/* ---------- game / map CRUD ---------- */
+function gameModal(g) {
+  if (!guard('game')) return;
+  const edit = !!g;
+  const cur = safeImg(g?.cover_url);
+  const status = g?.status || 'development';
+  const stBtns = Object.entries(STATUS).map(([k, s]) =>
+    `<button type="button" class="stbtn ${k === status ? 'on' : ''}" data-st="${k}" style="${k === status ? `background:${s.c};border-color:${s.c}` : ''}" data-c="${s.c}">${s.label}</button>`).join('');
+  const m = openModal({
+    title: edit ? 'แก้ไขแมพ' : 'เพิ่มแมพ',
+    submit: edit ? 'SAVE' : 'ADD',
+    body: `
+      <div>
+        <label class="lbl">รูปปก (JPG / PNG / GIF)</label>
+        <div id="gpv" class="w-full h-[130px] rounded-xl border border-dashed border-pink/30 overflow-hidden bg-bg flex items-center justify-center text-muted text-[10px] tracking-[2px] mb-2">
+          ${cur ? `<img src="${esc(cur)}" class="w-full h-full object-cover">` : '[ GAME COVER ART ]'}
+        </div>
+        <input type="file" name="cover" accept="image/*" class="fld" style="padding:.45rem .6rem">
+      </div>
+      <div><label class="lbl">ชื่อแมพ / เกม *</label><input name="title" class="fld" required maxlength="40" value="${esc(g?.title)}"></div>
+      <div><label class="lbl">สถานะ</label>
+        <div class="flex gap-2" id="stRow">${stBtns}</div>
+        <input type="hidden" name="status" value="${status}"></div>
+      <div><label class="lbl">คำอธิบาย</label><textarea name="description" rows="4" class="fld" maxlength="400">${esc(g?.description)}</textarea></div>
+      <div><label class="lbl">แท็ก (คั่นด้วยคอมมา)</label><input name="tags" class="fld" value="${esc(g?.tags)}" placeholder="PARRY PVP, BROOM MOVEMENT">
+        <div class="hint">ขึ้นเป็นป้ายเล็ก ๆ ใต้คำอธิบาย</div></div>
+      <div><label class="lbl">ลิงก์เล่นเกม / หน้าเกม (ไม่ใส่ก็ได้)</label><input name="link" class="fld" value="${esc(g?.link_url)}" placeholder="https://www.roblox.com/games/...">
+        <div class="hint">ถ้าใส่ จะมีปุ่ม PLAY NOW / OPEN PAGE ที่การ์ด</div></div>`,
+    onSubmit: async (fd, form) => {
+      const title = String(fd.get('title') || '').trim();
+      if (!title) throw new Error('กรอกชื่อก่อน');
+      const link = String(fd.get('link') || '').trim();
+      if (link && !safeLink(link)) throw new Error('ลิงก์ต้องขึ้นต้นด้วย https://');
+      let cover = g?.cover_url || null;
+      const file = form.querySelector('[name=cover]').files[0];
+      if (file) cover = await uploadImage(file, 'covers', false);
+      const row = {
+        title, description: String(fd.get('description') || '').trim() || null,
+        status: fd.get('status'), cover_url: cover, link_url: link || null,
+        tags: String(fd.get('tags') || '').split(',').map(s => s.trim()).filter(Boolean).join(',') || null,
+      };
+      if (edit) {
+        const { error } = await sb.from('games').update(row).eq('id', g.id); if (error) throw error;
+      } else {
+        row.sort_order = state.games.length ? Math.max(...state.games.map(x => x.sort_order)) + 1 : 0;
+        const { error } = await sb.from('games').insert(row); if (error) throw error;
+      }
+      await loadData(); toast(edit ? 'บันทึกแล้ว' : 'เพิ่มแมพแล้ว');
+    },
+  });
+  const stIn = m.form.querySelector('[name=status]');
+  m.form.querySelectorAll('[data-st]').forEach(b => b.addEventListener('click', () => {
+    stIn.value = b.dataset.st;
+    m.form.querySelectorAll('[data-st]').forEach(x => {
+      const on = x === b; x.classList.toggle('on', on);
+      x.style.background = on ? x.dataset.c : ''; x.style.borderColor = on ? x.dataset.c : '';
+    });
+  }));
+  m.form.querySelector('[name=cover]').addEventListener('change', e => {
+    const f = e.target.files[0]; if (!f) return;
+    $('#gpv').innerHTML = `<img src="${URL.createObjectURL(f)}" class="w-full h-full object-cover">`;
+  });
+}
+
+async function deleteGame(id) {
+  if (!guard('game')) return;
+  const g = state.games.find(x => x.id === id);
+  if (!confirm(`ลบแมพ "${g?.title}"?`)) return;
+  const { error } = await sb.from('games').delete().eq('id', id);
+  if (error) throw error;
+  await loadData(); toast('ลบแล้ว');
+}
+
+/* ---------- role CRUD ---------- */
+function roleModal(r) {
+  if (!guard('role')) return;
+  const edit = !!r;
+  const col = safeCol(r?.color);
+  const curIcon = IC[r?.icon] ? r.icon : 'star';
+  const sw = SWATCHES.map(s => `<button type="button" class="sw ${s.toLowerCase() === col.toLowerCase() ? 'on' : ''}" data-sw="${s}" style="background:${s}"></button>`).join('');
+  const m = openModal({
+    title: edit ? 'แก้ไขตำแหน่ง' : 'เพิ่มตำแหน่ง',
+    submit: edit ? 'SAVE' : 'ADD',
+    extraFoot: edit && !r.featured ? `<button type="button" class="btn btn-d" id="delRole">DELETE</button>` : '',
+    body: `
+      <div><label class="lbl">ชื่อตำแหน่ง (เอกพจน์) *</label><input name="label" class="fld" required maxlength="30" value="${esc(r?.label)}" placeholder="เช่น ARTIST"></div>
+      <div><label class="lbl">ชื่อหัวข้อกลุ่ม (พหูพจน์)</label><input name="plural" class="fld" maxlength="30" value="${esc(r?.plural_label)}" placeholder="เช่น ARTISTS"></div>
+      <div><label class="lbl">สีประจำตำแหน่ง</label>
+        <div class="flex items-center gap-2 flex-wrap">${sw}<input type="color" name="color" value="${col}" style="width:32px;height:28px;background:none;border:none;cursor:pointer"></div></div>
+      <div><label class="lbl">ไอคอนหน้าตำแหน่ง</label>
+        <div id="icGrid" class="flex flex-wrap gap-2" style="--c:${col}">${Object.keys(IC).map(k => `<button type="button" class="icbtn ${k === curIcon ? 'on' : ''}" data-ic="${k}" title="${k}">${svgIcon(k, 20)}</button>`).join('')}</div>
+        <input type="hidden" name="icon" value="${curIcon}"></div>`,
+    onSubmit: async fd => {
+      const label = String(fd.get('label') || '').trim().toUpperCase();
+      if (!label) throw new Error('กรอกชื่อตำแหน่ง');
+      const row = { label, plural_label: (String(fd.get('plural') || '').trim().toUpperCase()) || label + 'S', color: fd.get('color'), icon: fd.get('icon') || 'star' };
+      if (edit) {
+        const { error } = await sb.from('roles').update(row).eq('id', r.id); if (error) throw error;
+      } else {
+        row.sort_order = state.roles.length ? Math.max(...state.roles.map(x => x.sort_order)) + 1 : 0;
+        const { error } = await sb.from('roles').insert(row); if (error) throw error;
+      }
+      await loadData(); toast(edit ? 'บันทึกแล้ว' : 'เพิ่มตำแหน่งแล้ว');
+    },
+  });
+  const colorIn = m.form.querySelector('[name=color]');
+  const icGrid = m.form.querySelector('#icGrid'), icIn = m.form.querySelector('[name=icon]');
+  const paint = v => icGrid.style.setProperty('--c', v);
+  m.form.querySelectorAll('[data-sw]').forEach(b => b.addEventListener('click', () => {
+    colorIn.value = b.dataset.sw; paint(b.dataset.sw);
+    m.form.querySelectorAll('[data-sw]').forEach(x => x.classList.toggle('on', x === b));
+  }));
+  colorIn.addEventListener('input', () => { paint(colorIn.value); m.form.querySelectorAll('[data-sw]').forEach(x => x.classList.remove('on')); });
+  m.form.querySelectorAll('[data-ic]').forEach(b => b.addEventListener('click', () => {
+    icIn.value = b.dataset.ic;
+    m.form.querySelectorAll('[data-ic]').forEach(x => x.classList.toggle('on', x === b));
+  }));
+  const del = $('#delRole', m.wrap);
+  if (del) del.addEventListener('click', () => run(async () => {
+    if (!confirm(`ลบตำแหน่ง "${r.label}"?`)) return;
+    const { error } = await sb.from('roles').delete().eq('id', r.id);
+    if (error) throw new Error(error.code === '23503' ? 'ลบไม่ได้ ยังมีสมาชิกอยู่ในตำแหน่งนี้ — ย้าย/ลบสมาชิกก่อน' : error.message);
+    m.close(); await loadData(); toast('ลบตำแหน่งแล้ว');
+  }));
+}
+
+/* ---------- click delegation ---------- */
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-act]'); if (!b) return;
+  e.preventDefault(); e.stopPropagation();
+  const a = b.dataset.act, id = b.dataset.id;
+  switch (a) {
+    case 'menu':        return toggleMenu();
+    case 'login':       return run(login);
+    case 'logout':      return run(async () => { await sb.auth.signOut(); toast('ออกจากระบบแล้ว'); });
+    case 'copy-id':     return navigator.clipboard?.writeText(state.discordId).then(() => toast('คัดลอก Discord ID แล้ว: ' + state.discordId));
+    case 'open':        return window.open(b.dataset.url, '_blank', 'noopener');
+    case 'add-member':  return memberModal(null, b.dataset.role);
+    case 'edit-member': return memberModal(state.members.find(x => x.id === id));
+    case 'del-member':  return run(() => deleteMember(id));
+    case 'add-game':    return gameModal(null);
+    case 'edit-game':   return gameModal(state.games.find(x => x.id === id));
+    case 'del-game':    return run(() => deleteGame(id));
+    case 'move':        return run(() => reorder(b.dataset.kind, id, +b.dataset.dir));
+    case 'add-role':    return roleModal(null);
+    case 'edit-role':   return roleModal(state.roles.find(x => x.id === id));
+  }
+}, true);
+
+/* ---------- reveal on scroll ---------- */
+const io = new IntersectionObserver(es => es.forEach(en => { if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); } }), { threshold: .05 });
+document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+
+/* ---------- boot: โหลด config จาก env (Vercel) แล้วค่อยต่อ Supabase ---------- */
+async function boot() {
+  buildNav(); spy(); renderAuth();
+  let cfg = null;
+  try {
+    const r = await fetch('/api/config', { cache: 'no-store' });
+    if (r.ok) cfg = await r.json();
+  } catch (e) { /* เปิดแบบไม่มี Vercel function */ }
+
+  if (cfg?.url && cfg?.key && window.supabase) {
+    sb = window.supabase.createClient(cfg.url, cfg.key);
+  } else {
+    console.warn('[SYLIZ] ไม่พบ SUPABASE_URL / SUPABASE_PUBLISHABLE_KEY จาก /api/config — แสดงข้อมูลสำรอง (ระบบหลังบ้านปิด)');
+  }
+
+  await loadData();
+  spy();
+  if (sb) {
+    sb.auth.onAuthStateChange((ev, session) => {
+      if (ev === 'TOKEN_REFRESHED') return;
+      setTimeout(() => handleSession(session), 0);
+    });
+  }
+}
+boot();
+</script>
 </body>
 </html>
